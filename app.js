@@ -1,62 +1,62 @@
-// let key = document.querySelectorAll('.key');
-// console.log(key);
-// let display = document.getElementById('display');
-
-// key.forEach(keys =>{
-//     keys.addEventListener('click',(event)=>{
-//         let dataset = event.currentTarget.dataset;
-//         console.log(dataset);
-//         let value = event.currentTarget.dataset.id;
-//         display.innerHTML = value;
-//     })
-// })
-
 let keys = document.querySelectorAll('.key');
 let display = document.getElementById('display');
-let a = ""; let b = ""; let result = 0; let o;
+let a = ""; let o; let b =""; let result;
+// console.log(keys);
 
-keys.forEach(key =>{
-    console.log(key.id);
+keys.forEach(key => {
+    // console.log(key);
     if(key.classList.contains('key--num')){
         key.addEventListener('click' , (event) =>{
-            let value = event.currentTarget.innerHTML;
-            // console.log(typeof(value));
+            let value = event.currentTarget.dataset.value;
+            // a += value;
             display.innerHTML += value;
+            console.log(value);
             if(!o){
                 a += value;
+                console.log(a);
             }
             else{
                 b += value;
                 console.log(b);
-                
             }
+            // console.log(a);
         })
-    } 
+    }
     else if(key.classList.contains('key--op')){
-        key.addEventListener('click', (event) =>{
+        key.addEventListener('click' , (event)=>{
             let value = event.currentTarget.innerHTML;
+            let value1 = event.currentTarget.dataset.op;
             display.innerHTML += value;
-            o = value;
+            o = value1;
+            // console.log(value);
         })
     }
     else if(key.classList.contains('key--eq')){
-        key.addEventListener('click', (event) =>{
-            result = Number(a) + Number(b);
-            display.innerHTML = result;
+        key.addEventListener('click', (event)=>{
+            // result = Number(a) + Number(b);
+            // display.innerHTML = result;
+            if(o === 'add'){
+                console.log(Number(a));
+                result = Number(a) + Number(b);
+                display.innerHTML = result;
+            }
+            else if (o === 'subtract'){
+                result = Number(a) - Number(b);
+                display.innerHTML = result;
+            }
+            else if (o === 'multiply'){
+                result = Number(a) * Number(b);
+                display.innerHTML = result;
+            }
+            else if (o === 'divide'){
+                result = Number(a) / Number(b);
+                display.innerHTML = result;
+            }
         })
-    } 
-    else if(key.id === 'key-clear'){
-        key.addEventListener('click', (event) =>{
+    }
+    else if(key.id === "key-clear"){
+        key.addEventListener('click' , (event)=>{
             display.innerHTML = "";
         })
     }
-}
-
-    // console.log(key.classList.contains('key--num'));
-    // if(key.className == key--num)
-    // key.addEventListener('click' , (event)=>{
-    //     let value = event.currentTarget.innerHTML;
-    //     console.log(value);
-    //     display.innerHTML += value;
-    // })
-)
+});
