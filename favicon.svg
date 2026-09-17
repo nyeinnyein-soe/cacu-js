@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15" width="15" height="15"
+     shape-rendering="crispEdges" role="img" aria-label="Cacu">
+  <title>Cacu</title>
+
+  <!-- Editable master for the tab icon. Everything is a plain <rect> on a 15x15
+       pixel grid - no paths, no curves, no gradients. The raster siblings
+       (favicon.ico, apple-touch-icon.png) are generated from this same shape
+       list, so if you move a rect here, regenerate those to match.
+
+       Paint order matters: each rect covers the one before it. -->
+
+  <!-- Ink outline, full bleed so the icon fills the tab slot edge to edge -->
+  <rect width="15" height="15" fill="#0a0b16" />
+
+  <!-- Calculator body -->
+  <rect x="1" y="1" width="13" height="13" fill="#3b3f63" />
+
+  <!-- Screen, plus a lighter glare line across the top -->
+  <rect x="2" y="2" width="11" height="5" fill="#9dbc1e" />
+  <rect x="3" y="3" width="9" height="1" fill="#c3e04a" />
+
+  <!-- Keypad row 1: two number keys and an operator key -->
+  <rect x="2" y="9" width="3" height="2" fill="#dadeeb" />
+  <rect x="6" y="9" width="3" height="2" fill="#dadeeb" />
+  <rect x="10" y="9" width="3" height="2" fill="#f0a63c" />
+
+  <!-- Keypad row 2: two number keys and the equals key -->
+  <rect x="2" y="12" width="3" height="2" fill="#dadeeb" />
+  <rect x="6" y="12" width="3" height="2" fill="#dadeeb" />
+  <rect x="10" y="12" width="3" height="2" fill="#46c98a" />
+</svg>

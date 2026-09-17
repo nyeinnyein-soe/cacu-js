@@ -1,3 +1,393 @@
-h3{
-    color: blueviolet;
+/* ==========================================================================
+   Pixel Calc — a 2D pixel-art calculator skin.
+   No JavaScript logic lives here; this file only decides how things look.
+
+   The whole look comes from three pixel-art rules:
+     1. No rounded corners, ever.       -> border-radius stays 0
+     2. Light bevel top-left, shadow bottom-right, and a hard black outline.
+     3. Depth is faked with flat, offset box-shadows (never blurred).
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   0. Vendored pixel font — self-hosted, no CDN request
+
+   "Press Start 2P" by the Press Start 2P Project Authors, SIL Open Font
+   License 1.1. The license text ships alongside the file in fonts/OFL.txt.
+
+   The full 118 KB TTF ships here rather than Google's 12 KB `latin` woff2
+   subset, because the keypad needs two glyphs that subset excludes: the radical
+   sign √ (U+221A) and pi π (U+03C0). Both are present in the complete font, so
+   shipping it is what keeps all 24 key labels in the pixel face instead of
+   letting those two silently drop to Courier.
+
+   Watch out if you ever re-subset this: the MINUS SIGN − (U+2212) is genuinely
+   absent from Press Start 2P, so the subtract key uses an ASCII hyphen (-).
+   U+2212 would render as a blank box.
+   -------------------------------------------------------------------------- */
+@font-face {
+    font-family: "Press Start 2P";
+    font-style: normal;
+    font-weight: 400;
+    /* swap = show the fallback immediately, repaint once the file is ready */
+    font-display: swap;
+    /* Path is relative to this stylesheet, so it resolves from the project root */
+    src: url("fonts/press-start-2p-regular.ttf") format("truetype");
+}
+
+/* --------------------------------------------------------------------------
+   1. Design tokens
+   -------------------------------------------------------------------------- */
+:root {
+    /* Page background */
+    --px-bg:          #14162b;
+    --px-bg-checker:  #1c1f39;
+
+    /* Ink: the "outline" colour every pixel-art shape is drawn with */
+    --px-ink:         #0a0b16;
+
+    /* Calculator body */
+    --px-frame:       #3b3f63;
+    --px-frame-light: #6f76ad;
+    --px-frame-dark:  #22243c;
+
+    /* Screen (handheld-console green) */
+    --px-screen:      #9dbc1e;
+    --px-screen-lit:  #c3e04a;
+    --px-screen-ink:  #17300f;
+
+    /* Key families. Each declares a cap colour plus its bevel highlight and
+       shadow; the .key rule further down draws every cap from that triple, so
+       no colour has to repeat the bevel maths.
+         plain .key   functions  C  pi  sqrt  x2  %     neutral, sits back
+         .key--num    numbers    0-9 and .              brightest, used most
+         .key--op     operators  divide multiply - +    warm, clearly not a digit
+         .key--eq     equals                            green, echoing the screen */
+    --px-key:         #a8aec6;
+    --px-key-light:   #d2d7e6;
+    --px-key-dark:    #6f7591;
+    --px-key-ink:     #14152a;
+
+    --px-num:         #f4f6fb;
+    --px-num-light:   #ffffff;
+    --px-num-dark:    #a9aec6;
+
+    --px-op:          #f0a63c;
+    --px-op-light:    #ffd07a;
+    --px-op-dark:     #b06f14;
+
+    /* Also the colour of the LED in the brand plate */
+    --px-eq:          #46c98a;
+    --px-eq-light:    #87f0bb;
+    --px-eq-dark:     #1f8b58;
+
+    /* Chunky sizes, in pixels — pixel art does not do decimals */
+    --px-border: 3px;
+    --px-drop:   5px;
+    --px-gap:    8px;
+}
+
+/* --------------------------------------------------------------------------
+   2. Base page
+   -------------------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+}
+
+body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: grid;
+    place-items: center;
+    padding: 24px 16px;
+
+    font-family: "Press Start 2P", "Courier New", monospace;
+    color: var(--px-key);
+
+    background-color: var(--px-bg);
+    /* A 24px checkerboard, drawn with two offset gradients — no image file needed */
+    background-image:
+        linear-gradient(45deg,
+            var(--px-bg-checker) 25%, transparent 25%,
+            transparent 75%, var(--px-bg-checker) 75%),
+        linear-gradient(45deg,
+            var(--px-bg-checker) 25%, transparent 25%,
+            transparent 75%, var(--px-bg-checker) 75%);
+    background-size: 24px 24px;
+    background-position: 0 0, 12px 12px;
+}
+
+/* --------------------------------------------------------------------------
+   3. Calculator body
+   -------------------------------------------------------------------------- */
+.calculator {
+    width: min(100%, 22rem);
+    padding: 14px;
+
+    background: var(--px-frame);
+    border: var(--px-border) solid var(--px-ink);
+    border-radius: 0;
+
+    /* Inset bevel = light from the top-left. Offset shadow = it sits on the desk. */
+    box-shadow:
+        inset var(--px-drop) var(--px-drop) 0 var(--px-frame-light),
+        inset calc(var(--px-drop) * -1) calc(var(--px-drop) * -1) 0 var(--px-frame-dark),
+        8px 8px 0 rgb(0 0 0 / 0.45);
+}
+
+/* --------------------------------------------------------------------------
+   4. Brand plate (the little label above the screen)
+   -------------------------------------------------------------------------- */
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 0 4px;
+}
+
+.brand__led {
+    width: 10px;
+    height: 10px;
+    flex: none;
+    background: var(--px-eq-light);
+    border: 2px solid var(--px-ink);
+    /* steps() keeps the pulse hard-edged instead of smoothly fading */
+    animation: led-blink 2s steps(1, end) infinite;
+}
+
+@keyframes led-blink {
+    0%,
+    60%  { background: var(--px-eq-light); }
+    61%,
+    100% { background: var(--px-eq-dark); }
+}
+
+.brand__title {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--px-screen-lit);
+    text-shadow: 2px 2px 0 var(--px-ink);
+}
+
+/* --------------------------------------------------------------------------
+   5. Screen
+   -------------------------------------------------------------------------- */
+.screen {
+    position: relative;
+    overflow: hidden;
+
+    min-height: 96px;
+    margin-bottom: 14px;
+    padding: 12px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 10px;
+
+    background: var(--px-screen);
+    border: var(--px-border) solid var(--px-ink);
+    box-shadow:
+        inset var(--px-border) var(--px-border) 0 rgb(0 0 0 / 0.28),
+        inset calc(var(--px-border) * -1) calc(var(--px-border) * -1) 0 var(--px-screen-lit);
+}
+
+/* CRT scanlines: 2px of darkness every 4px, straight down the glass */
+.screen::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+        to bottom,
+        rgb(0 0 0 / 0.13) 0 2px,
+        transparent 2px 4px
+    );
+}
+
+.screen__history {
+    width: 100%;
+    margin: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-align: right;
+    text-overflow: ellipsis;
+
+    font-size: 0.5rem;
+    line-height: 1.6;
+    color: var(--px-screen-ink);
+    opacity: 0.62;
+}
+
+.screen__result {
+    display: block;
+    width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-align: right;
+
+    font-size: clamp(1.25rem, 7vw, 1.75rem);
+    line-height: 1.2;
+    color: var(--px-screen-ink);
+    text-shadow: 2px 2px 0 rgb(255 255 255 / 0.25);
+}
+
+/* --------------------------------------------------------------------------
+   6. Keypad grid — 5 columns x 5 rows
+   -------------------------------------------------------------------------- */
+.keypad {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--px-gap);
+}
+
+/* --------------------------------------------------------------------------
+   7. Keys
+   -------------------------------------------------------------------------- */
+.key {
+    /* Reset the browser's native button chrome first */
+    appearance: none;
+    margin: 0;
+    border-radius: 0;
+
+    /* 5 columns are noticeably narrower than 4, so both the padding and the label
+       size come down to keep "x²" on a single line. */
+    padding: 15px 2px;
+
+    font-family: inherit;
+    font-size: 0.75rem;
+    line-height: 1;
+    white-space: nowrap;
+
+    /* Every keycap is built from these three colours. A variant below only swaps
+       this triple, and a key with no variant class keeps the neutral function
+       colours, which is why row 1 needs no class of its own. */
+    --cap:       var(--px-key);
+    --cap-light: var(--px-key-light);
+    --cap-dark:  var(--px-key-dark);
+
+    color: var(--px-key-ink);
+    background: var(--cap);
+    border: var(--px-border) solid var(--px-ink);
+    cursor: pointer;
+
+    /* Bevel inside + a flat drop shadow outside = a raised plastic keycap */
+    box-shadow:
+        inset var(--px-drop) var(--px-drop) 0 var(--cap-light),
+        inset calc(var(--px-drop) * -1) calc(var(--px-drop) * -1) 0 var(--cap-dark),
+        0 var(--px-drop) 0 var(--px-ink);
+
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    transition: transform 60ms steps(1, end), box-shadow 60ms steps(1, end);
+}
+
+.key:hover {
+    background: var(--cap-light);
+}
+
+/* Pressed: the key travels down by exactly its own shadow and the shadow vanishes */
+.key:active {
+    transform: translateY(var(--px-drop));
+    box-shadow:
+        inset var(--px-drop) var(--px-drop) 0 var(--cap-light),
+        inset calc(var(--px-drop) * -1) calc(var(--px-drop) * -1) 0 var(--cap-dark),
+        0 0 0 var(--px-ink);
+}
+
+/* Keyboard users get an obvious pixel frame instead of the default ring */
+.key:focus-visible {
+    outline: 3px solid var(--px-screen-lit);
+    outline-offset: 3px;
+}
+
+/* --- Variants: one colour triple each ------------------------------------
+   Because .key above already reads --cap / --cap-light / --cap-dark, a family
+   only has to name its three colours. Nothing here repeats the bevel maths.
+
+     plain .key   functions  C  pi  sqrt  x2  %     neutral grey-violet
+     .key--num    numbers    0-9 and .              near white, the brightest
+     .key--op     operators  divide multiply - +    amber, unmistakably warm
+     .key--eq     equals                            green, matching the screen   */
+
+.key--num {
+    --cap:       var(--px-num);
+    --cap-light: var(--px-num-light);
+    --cap-dark:  var(--px-num-dark);
+}
+
+.key--op {
+    --cap:       var(--px-op);
+    --cap-light: var(--px-op-light);
+    --cap-dark:  var(--px-op-dark);
+}
+
+.key--eq {
+    --cap:       var(--px-eq);
+    --cap-light: var(--px-eq-light);
+    --cap-dark:  var(--px-eq-dark);
+}
+
+/* --- Placement -----------------------------------------------------------
+   Equals is pinned to the right-hand column and spans rows 4-5. This is the one
+   place with explicit line numbers, because auto-placement only ever scans
+   forward from its cursor: a span that begins part-way down the grid cannot be
+   produced by DOM order alone. Zero then runs the full width of the four
+   columns above it, filling the space the shorter equals frees up. */
+
+.key--tall {
+    grid-column: 5;
+    grid-row: 4 / span 2;
+}
+
+.key--wide {
+    grid-column: span 4;
+}
+
+/* --------------------------------------------------------------------------
+   8. Small screens
+   -------------------------------------------------------------------------- */
+@media (max-width: 360px) {
+    :root {
+        --px-drop: 4px;
+        --px-gap:  6px;
+    }
+
+    .calculator {
+        padding: 10px;
+    }
+
+    .key {
+        padding: 12px 2px;
+        font-size: 0.625rem;
+    }
+
+    .screen {
+        min-height: 84px;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   9. Respect reduced-motion preferences
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    .key {
+        transition: none;
+    }
+
+    .brand__led {
+        animation: none;
+        background: var(--px-screen-lit);
+    }
 }
